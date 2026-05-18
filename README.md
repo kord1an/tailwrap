@@ -4,7 +4,7 @@
 
 It provides a fast and intuitive way to manage your Tailscale connection, switch Exit Nodes, and monitor your network devices without opening a browser or using the CLI.
 
-![Screenshot Placeholder](icons/icon-active.png)
+<img src="screenshot_tray.png" style="width: 50%;">
 
 ## Features
 
