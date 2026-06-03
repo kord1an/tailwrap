@@ -4,8 +4,6 @@
 
 It provides a fast and intuitive way to manage your Tailscale connection without opening a browser or using the CLI — right from your system tray.
 
-<img src="screenshot_tray.png" width="360">
-
 ## Features
 
 - **Quick Connect/Disconnect** — Toggle Tailscale with a single click.
@@ -46,6 +44,7 @@ chmod +x install.sh
 ```
 
 The installer will:
+
 1. Copy files to `~/.local/share/tailwrap/`
 2. Create a Python virtual environment and install dependencies
 3. Add `tailwrap` to your application menu
