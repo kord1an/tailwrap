@@ -238,8 +238,9 @@ def on_toggle_done(proc, task, indicator):
 def toggle_pref(flag_name, desired, indicator):
     value = "true" if desired else "false"
     run_tailscale(
-        ["tailscale", "up", f"--{flag_name}={value}"],
-        lambda p, t, i=indicator: on_pref_done(p, t, i, flag_name)
+        ["tailscale", "set", f"--{flag_name}={value}"],
+        lambda p, t, i: on_pref_done(p, t, i, flag_name),
+        indicator
     )
 
 def on_pref_done(proc, task, indicator, flag_name):
@@ -251,10 +252,10 @@ def on_pref_done(proc, task, indicator, flag_name):
 
 def set_exit_node(ip, indicator):
     if ip is None:
-        args = ["tailscale", "up", "--exit-node="]
+        args = ["tailscale", "set", "--exit-node="]
     else:
-        args = ["tailscale", "up", f"--exit-node={ip}"]
-    run_tailscale(args, lambda p, t, i=indicator, ip=ip: on_exit_node_done(p, t, i, ip))
+        args = ["tailscale", "set", f"--exit-node={ip}"]
+    run_tailscale(args, lambda p, t, i: on_exit_node_done(p, t, i, ip), indicator)
 
 def on_exit_node_done(proc, task, indicator, ip):
     try:
@@ -311,12 +312,12 @@ def build_network_menu(data):
 
 def build_exit_nodes_menu(data, indicator):
     menu = Gtk.Menu()
-    active_node_id = data.get("ExitNodeStatus", {}).get("ID")
+    active_node_id = (data.get("ExitNodeStatus") or {}).get("ID")
 
     none_item = Gtk.RadioMenuItem.new_with_label(None, "None")
     if active_node_id is None:
         none_item.set_active(True)
-    none_item.connect("activate", lambda *a: set_exit_node(None, indicator))
+    choices = [(none_item, None)]
     menu.append(none_item)
 
     radio_group = none_item
@@ -328,12 +329,17 @@ def build_exit_nodes_menu(data, indicator):
             has_nodes = True
             hostname = peer.get("HostName", "Unknown")
             ip = peer.get("TailscaleIPs", [""])[0]
-            is_active = (peer_id == active_node_id)
-            item = Gtk.RadioMenuItem.new_with_label(radio_group, f"{hostname} ({ip})")
+            is_active = active_node_id is not None and peer.get("ID") == active_node_id
+            item = Gtk.RadioMenuItem.new_with_label_from_widget(radio_group, f"{hostname} ({ip})")
             if is_active:
                 item.set_active(True)
-            item.connect("activate", lambda *a, ip=ip: set_exit_node(ip, indicator))
+            choices.append((item, ip))
             menu.append(item)
+
+    # Connect only after restoring selection; ignore the item being deselected.
+    for item, ip in choices:
+        item.connect("toggled", lambda selected, ip=ip:
+                     set_exit_node(ip, indicator) if selected.get_active() else None)
 
     if not has_nodes:
         item = Gtk.MenuItem(label="No Exit Nodes available")
